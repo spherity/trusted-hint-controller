@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "lib": ["esnext", "dom"],
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "node",
+    "declarationMap": true,                           /* Create sourcemaps for d.ts files. */
+    "sourceMap": true,                                /* Create source map files for emitted JavaScript files. */
+    "importsNotUsedAsValues": "remove",               /* Specify emit/checking behavior for imports that are only used for types. */
+    "isolatedModules": true,                          /* Ensure that each file can be safely transpiled without relying on other imports. */
+    "moduleDetection": "force",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "noImplicitAny": true,
+    "resolveJsonModule": true,
+    "removeComments": false,
+    "rootDir": "src",
+    "declaration": true,
+    "incremental": true,
+    "composite": false,
+    "outDir": "./dist",
+    "pretty": true,
+    "newLine": "lf",
+    "stripInternal": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noEmitOnError": true,
+    "useDefineForClassFields": true,
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test"],
+}
