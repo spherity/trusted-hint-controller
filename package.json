@@ -6,6 +6,9 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.cts",
+
+  "files": ["index.ts", "/dist"],
+
   "exports": {
     "require": {
       "types": "./dist/index.d.cts",
@@ -38,6 +41,6 @@
   },
   "dependencies": {
     "@spherity/trusted-hint-registry": "^1.0.0",
-    "viem": "^1.19.7"
+    "viem": "^2.5.0"
   }
 }

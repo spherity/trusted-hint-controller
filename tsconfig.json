@@ -1,32 +1,22 @@
 {
   "compilerOptions": {
-    "lib": ["esnext", "dom"],
-    "module": "esnext",
-    "target": "esnext",
-    "moduleResolution": "node",
+    "outDir": "./dist/",                              /* Specify an output folder for all emitted files. */
+    "lib": ["ES2022"],
+    "target": "ES2022",
     "declarationMap": true,                           /* Create sourcemaps for d.ts files. */
     "sourceMap": true,                                /* Create source map files for emitted JavaScript files. */
     "importsNotUsedAsValues": "remove",               /* Specify emit/checking behavior for imports that are only used for types. */
     "isolatedModules": true,                          /* Ensure that each file can be safely transpiled without relying on other imports. */
-    "moduleDetection": "force",
-    "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowSyntheticDefaultImports": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "noImplicitAny": true,
-    "resolveJsonModule": true,
-    "removeComments": false,
-    "rootDir": "src",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "moduleDetection": "force",
+    "allowSyntheticDefaultImports": true,             // To provide backwards compatibility, Node.js allows you to import most CommonJS packages with a default import. This flag tells TypeScript that it's okay to use import on CommonJS modules.
     "declaration": true,
-    "incremental": true,
-    "composite": false,
-    "outDir": "./dist",
     "pretty": true,
     "newLine": "lf",
     "stripInternal": true,
+    "strict": true,
     "noImplicitReturns": true,
     "noImplicitOverride": true,
     "noUnusedLocals": true,
@@ -36,6 +26,9 @@
     "noPropertyAccessFromIndexSignature": true,
     "noEmitOnError": true,
     "useDefineForClassFields": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "experimentalDecorators": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "test"],
