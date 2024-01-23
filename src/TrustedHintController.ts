@@ -24,7 +24,7 @@ export class TrustedHintController {
   readonly readClient?: PublicClient;
   readonly walletClient?: WalletClient;
   readonly metaTransactionWalletClient?: WalletClient;
-  private readonly contract: GetContractReturnType<
+  readonly contract: GetContractReturnType<
     typeof TRUSTED_HINT_REGISTRY_ABI,
     { public: PublicClient, wallet: WalletClient }
   >
@@ -114,7 +114,7 @@ export class TrustedHintController {
     if (!this.walletClient?.chain || !this.walletClient?.account) {
       throw new Error(`WalletClient must have a chain and account set.`)
     }
-    if (this.metaTransactionWalletClient.chain !== this.walletClient.chain) {
+    if (this.metaTransactionWalletClient.chain?.id != this.walletClient.chain?.id) {
       throw new Error(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
     }
 
