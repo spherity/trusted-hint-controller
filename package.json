@@ -22,7 +22,7 @@
   },
   "scripts": {
     "build": "pkgroll",
-    "test": "vitest",
+    "test": "vitest --config ./test/unit/vitest.config.ts",
     "test:integration": "vitest --config ./test/integration/vitest.config.ts"
   },
   "repository": {

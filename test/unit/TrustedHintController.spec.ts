@@ -1,5 +1,5 @@
 import {describe, vi, beforeAll, it, expect} from "vitest";
-import { TrustedHintController } from "../src";
+import { TrustedHintController } from "../../src";
 import {createPublicClient, createWalletClient} from "viem";
 
 const mocks = vi.hoisted(() => {
@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => {
           getHint: vi.fn(),
           version: vi.fn(),
           nonces: vi.fn(),
+          identityIsOwner: vi.fn(),
         },
         write: {
           setHint: vi.fn(),
@@ -41,7 +42,7 @@ const mocks = vi.hoisted(() => {
 })
 
 vi.mock("viem", () => mocks.viem);
-vi.mock("../src/utils.ts", () => mocks.utils);
+vi.mock("../../src/utils.ts", () => mocks.utils);
 
 describe("TrustedHintController", () => {
   let controller: TrustedHintController;
@@ -94,6 +95,7 @@ describe("TrustedHintController", () => {
       vi.spyOn(controller.contract.write, "setHintSigned").mockImplementationOnce(async () => result);
       vi.spyOn(controller.contract.read, "version").mockImplementationOnce(async () => version);
       vi.spyOn(controller.contract.read, "nonces").mockImplementationOnce(async () => nonce);
+      vi.spyOn(controller.contract.read, "identityIsOwner").mockImplementationOnce(async () => true);
 
       const hint = await controller.setHintSigned("0x0", "0x0", "0x0", "0x0");
 
@@ -139,6 +141,28 @@ describe("TrustedHintController", () => {
       });
       await expect(controllerWithoutWallet.setHintSigned("0x0", "0x0", "0x0", "0x0"))
         .rejects.toThrow("Provided WalletClient and MetaTransactionWalletClient must be on the same chain.");
+    })
+
+    it("should throw if meta transaction wallet client is not the owner of the namespace", async () => {
+      vi.spyOn(mocks.viem, "createWalletClient").mockImplementationOnce(() => ({
+        chain: {
+          id: 0,
+        },
+        account: {
+          address: "0x0",
+        }
+      } as any));
+      vi.spyOn(mocks.viem, "createPublicClient").mockImplementationOnce(() => ({
+        chain: {
+          id: 0,
+        },
+      } as any));
+      const controllerWithoutWallet = new TrustedHintController({
+        walletClient: createWalletClient({} as any),
+        metaTransactionWalletClient: createWalletClient({} as any),
+      });
+      await expect(controllerWithoutWallet.setHintSigned("0x0", "0x0", "0x0", "0x0"))
+        .rejects.toThrow("Provided MetaTransactionWalletClient must be the owner of the namespace.");
     })
   })
 
