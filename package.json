@@ -6,9 +6,10 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.cts",
-
-  "files": ["index.ts", "/dist"],
-
+  "files": [
+    "index.ts",
+    "/dist"
+  ],
   "exports": {
     "require": {
       "types": "./dist/index.d.cts",
@@ -21,7 +22,8 @@
   },
   "scripts": {
     "build": "pkgroll",
-    "test": "vitest"
+    "test": "vitest",
+    "test:integration": "vitest --config ./test/integration/vitest.config.ts"
   },
   "repository": {
     "type": "git",
@@ -41,6 +43,7 @@
   },
   "dependencies": {
     "@spherity/trusted-hint-registry": "^1.0.0",
+    "@viem/anvil": "^0.0.7",
     "viem": "^2.5.0"
   }
 }
