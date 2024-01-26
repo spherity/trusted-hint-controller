@@ -1,6 +1,6 @@
 import {ALICE} from "./setup/constants";
 import {aliceWalletClient, bobWalletClient} from "./setup/utils";
-import {expect, it, describe, beforeAll} from "vitest";
+import {beforeAll, describe, expect, it} from "vitest";
 import {TrustedHintController} from "../../src";
 import {bytesToHex, stringToBytes} from "viem";
 
@@ -32,7 +32,7 @@ describe("TrustedHintController (Integration)", () => {
     expect(newlySetHint).toBe(value);
   })
 
-  it.only("should set a hint signed from bobs account with signed payload from alice", async () => {
+  it("should set a hint signed from bobs account with signed payload from alice", async () => {
     const metaTxSupportedController = new TrustedHintController({
       walletClient: bobWalletClient,
       metaTransactionWalletClient: aliceWalletClient,
