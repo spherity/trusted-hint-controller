@@ -36,7 +36,12 @@ const mocks = vi.hoisted(() => {
     utils: {
       getDeployment: vi.fn(() => ({
         registry: "0x0"
-      }))
+      })),
+      getSignedDataType: vi.fn(),
+      SignedDataType: {
+        SetHintSigned: 0,
+        SetHintSignedMetadata: 1,
+      }
     }
   }
 })
