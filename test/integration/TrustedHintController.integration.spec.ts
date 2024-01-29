@@ -47,4 +47,23 @@ describe("TrustedHintController (Integration)", () => {
     const newlySetHint = await controller.getHint(ALICE, list, key);
     expect(newlySetHint).toBe(value);
   })
+
+  it("should set a hint signed from bobs account with signed payload from alice with metadata", async () => {
+    const metaTxSupportedController = new TrustedHintController({
+      walletClient: bobWalletClient,
+      metaTransactionWalletClient: aliceWalletClient,
+    });
+
+    const list = bytesToHex(stringToBytes("list"), { size: 32 })
+    const key = bytesToHex(stringToBytes("key"), { size: 32 })
+    const value = bytesToHex(stringToBytes("value"), { size: 32 })
+    const metadata = bytesToHex(stringToBytes("metadata"))
+    const hint = await metaTxSupportedController.setHintSigned(ALICE, list, key, value, metadata);
+    const newlySetHint = await controller.getHint(ALICE, list, key);
+    const newlySetHintMetadata = await controller.contract.read.getMetadata([ALICE, list, key, value]);
+
+    expect(hint).toBeDefined();
+    expect(newlySetHint).toBe(value);
+    expect(newlySetHintMetadata).toBe(metadata);
+  })
 });

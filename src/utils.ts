@@ -13,3 +13,38 @@ export function getDeployment(client: Client, type: string) {
   }
   return deployment;
 }
+
+export enum SignedDataType {
+  SetHintSigned,
+  SetHintSignedMetadata
+}
+
+export function getSignedDataType(type: SignedDataType) {
+  switch (type) {
+    case SignedDataType.SetHintSigned:
+      return {
+        SetHintSigned: [
+          {name: 'namespace', type: 'address'},
+          {name: 'list', type: 'bytes32'},
+          {name: 'key', type: 'bytes32'},
+          {name: 'value', type: 'bytes32'},
+          {name: 'signer', type: 'address'},
+          {name: 'nonce', type: 'uint256'},
+        ],
+      }
+    case SignedDataType.SetHintSignedMetadata:
+      return {
+        SetHintSigned: [
+          {name: 'namespace', type: 'address'},
+          {name: 'list', type: 'bytes32'},
+          {name: 'key', type: 'bytes32'},
+          {name: 'value', type: 'bytes32'},
+          {name: 'metadata', type: 'bytes'},
+          {name: 'signer', type: 'address'},
+          {name: 'nonce', type: 'uint256'},
+        ],
+      }
+    default:
+      throw new Error(`Unknown signed data type ${type}`)
+  }
+}

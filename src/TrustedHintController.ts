@@ -1,6 +1,6 @@
 import {Address, getContract, GetContractReturnType, PublicClient, WalletClient} from "viem";
 import {TRUSTED_HINT_REGISTRY_ABI} from "@spherity/trusted-hint-registry";
-import {getDeployment} from "./utils";
+import {getDeployment, getSignedDataType, SignedDataType} from "./utils";
 
 interface WalletClientOnly {
   walletClient: WalletClient;
@@ -70,6 +70,7 @@ export class TrustedHintController {
    * @param namespace The namespace of the hint.
    * @param list The list of the hint.
    * @param key The key of the hint.
+   * @returns The transaction hash of the meta transaction.
    */
   async getHint(namespace: Address, list: BytesHex, key: BytesHex): Promise<BytesHex> {
     return this.contract.read.getHint([
@@ -86,6 +87,7 @@ export class TrustedHintController {
    * @param list The list of the hint.
    * @param key The key of the hint.
    * @param value The value of the hint.
+   * @returns The transaction hash of the meta transaction.
    */
   async setHint(namespace: Address, list: BytesHex, key: BytesHex, value: BytesHex) {
     if (!this.walletClient?.chain || !this.walletClient?.account) {
@@ -106,8 +108,9 @@ export class TrustedHintController {
    * @param list The list of the hint.
    * @param key The key of the hint.
    * @param value The value of the hint.
+   * @returns The transaction hash of the meta transaction.
    */
-  async setHintSigned(namespace: Address, list: BytesHex, key: BytesHex, value: BytesHex) {
+  async setHintSigned(namespace: Address, list: BytesHex, key: BytesHex, value: BytesHex, metadata?: BytesHex) {
     if (!this.metaTransactionWalletClient || !this.metaTransactionWalletClient.account) {
       throw new Error(`metaTransactionWalletClient must be set when creating a TrustedHintController instance`)
     }
@@ -118,44 +121,48 @@ export class TrustedHintController {
       throw new Error(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
     }
 
-    const metaTransactionWalletClientAddress = this.metaTransactionWalletClient.account.address
-    const signerIsOwner = await this.contract.read.identityIsOwner([
-      namespace,
-      list,
-      metaTransactionWalletClientAddress
-    ])
-    if (!signerIsOwner) {
-      throw new Error(`Provided MetaTransactionWalletClient must be the owner of the namespace.`)
-    }
-
-    const signature = await this.metaTransactionWalletClient.signTypedData({
-      account: this.metaTransactionWalletClient.account,
-      domain: await this.getEIP712Domain(),
-      types: {
-        SetHintSigned: [
-          {name: 'namespace', type: 'address'},
-          {name: 'list', type: 'bytes32'},
-          {name: 'key', type: 'bytes32'},
-          {name: 'value', type: 'bytes32'},
-          {name: 'signer', type: 'address'},
-          {name: 'nonce', type: 'uint256'},
-        ],
-      },
-      primaryType: 'SetHintSigned',
-      message: {
+    try {
+      const metaSigner = this.metaTransactionWalletClient.account
+      const signerIsOwner = await this.contract.read.identityIsOwner([
         namespace,
         list,
-        key,
-        value,
-        signer: metaTransactionWalletClientAddress,
-        nonce: await this.contract.read.nonces([metaTransactionWalletClientAddress])
+        metaSigner.address
+      ])
+      if (!signerIsOwner) {
+        throw new Error(`Provided MetaTransactionWalletClient must be the owner of the namespace.`)
       }
-    })
 
-    return this.contract.write.setHintSigned([namespace, list, key, value, metaTransactionWalletClientAddress, signature], {
-      chain: this.walletClient.chain,
-      account: this.walletClient.account,
-    })
+      const signerNonce = await this.contract.read.nonces([metaSigner.address])
+      const type = metadata
+        ? getSignedDataType(SignedDataType.SetHintSignedMetadata)
+        : getSignedDataType(SignedDataType.SetHintSigned)
+      const message = metadata
+        ? { namespace, list, key, value, metadata, signer: metaSigner.address, nonce: signerNonce }
+        : { namespace, list, key, value, signer: metaSigner.address, nonce: signerNonce }
+
+      const domain = await this.getEIP712Domain()
+      const signature = await this.metaTransactionWalletClient.signTypedData({
+        account: metaSigner,
+        domain,
+        types: type,
+        primaryType: 'SetHintSigned',
+        message: message
+      })
+
+      if (metadata) {
+        return this.contract.write.setHintSigned(
+          [namespace, list, key, value, metadata, metaSigner.address, signature],
+          { chain: this.walletClient.chain, account: this.walletClient.account }
+        )
+      } else {
+        return this.contract.write.setHintSigned(
+          [namespace, list, key, value, metaSigner.address, signature],
+          { chain: this.walletClient.chain, account: this.walletClient.account }
+        )
+      }
+    } catch (e: any) {
+      throw new Error(`Failed to set hint signed: ${e.message}`)
+    }
   }
 }
 
