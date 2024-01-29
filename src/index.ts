@@ -1,0 +1,1 @@
+export { TrustedHintController } from './TrustedHintController.js';
