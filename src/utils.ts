@@ -7,7 +7,7 @@ export function getDeployment(client: Client, type: string) {
     throw new Error(`No chainId found in provided readClient`)
   }
 
-  const deployment =  deployments.find(d => d.chainId === chainId && d.type === type);
+  const deployment = deployments.find(d => d.chainId === chainId && d.type === type);
   if (!deployment) {
     throw new Error(`No deployment found for chainId ${chainId} and type ${type}`)
   }
@@ -16,7 +16,9 @@ export function getDeployment(client: Client, type: string) {
 
 export enum SignedDataType {
   SetHintSigned,
-  SetHintSignedMetadata
+  SetHintSignedMetadata,
+  SetHintsSigned,
+  SetHintsSignedMetadata,
 }
 
 export function getSignedDataType(type: SignedDataType) {
@@ -40,6 +42,29 @@ export function getSignedDataType(type: SignedDataType) {
           {name: 'key', type: 'bytes32'},
           {name: 'value', type: 'bytes32'},
           {name: 'metadata', type: 'bytes'},
+          {name: 'signer', type: 'address'},
+          {name: 'nonce', type: 'uint256'},
+        ],
+      }
+    case SignedDataType.SetHintsSigned:
+      return {
+        SetHintsSigned: [
+          {name: 'namespace', type: 'address'},
+          {name: 'list', type: 'bytes32'},
+          {name: 'keys', type: 'bytes32[]'},
+          {name: 'values', type: 'bytes32[]'},
+          {name: 'signer', type: 'address'},
+          {name: 'nonce', type: 'uint256'},
+        ],
+      }
+    case SignedDataType.SetHintsSignedMetadata:
+      return {
+        SetHintsSigned: [
+          {name: 'namespace', type: 'address'},
+          {name: 'list', type: 'bytes32'},
+          {name: 'keys', type: 'bytes32[]'},
+          {name: 'values', type: 'bytes32[]'},
+          {name: 'metadata', type: 'bytes[]'},
           {name: 'signer', type: 'address'},
           {name: 'nonce', type: 'uint256'},
         ],
