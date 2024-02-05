@@ -266,6 +266,7 @@ describe("TrustedHintController", () => {
       vi.spyOn(controller.contract.read, "version").mockImplementationOnce(async () => version);
       vi.spyOn(controller.contract.read, "nonces").mockImplementationOnce(async () => nonce);
       vi.spyOn(controller.contract.read, "identityIsOwner").mockImplementationOnce(async () => true);
+      // @ts-ignore
       vi.spyOn(controller.metaTransactionWalletClient, "signTypedData").mockImplementationOnce(async () => "0x0");
 
       const hint = await controller.setHintsSigned("0x0", "0x0", keys, values);
@@ -289,6 +290,7 @@ describe("TrustedHintController", () => {
       vi.spyOn(controller.contract.read, "version").mockImplementationOnce(async () => version);
       vi.spyOn(controller.contract.read, "nonces").mockImplementationOnce(async () => nonce);
       vi.spyOn(controller.contract.read, "identityIsOwner").mockImplementationOnce(async () => true);
+      // @ts-ignore
       vi.spyOn(controller.metaTransactionWalletClient, "signTypedData").mockImplementationOnce(async () => "0x0");
 
       const hint = await controller.setHintsSigned("0x0", "0x0", keys, values, metadata);

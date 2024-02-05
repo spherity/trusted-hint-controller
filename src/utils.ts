@@ -19,6 +19,12 @@ export enum SignedDataType {
   SetHintSignedMetadata,
   SetHintsSigned,
   SetHintsSignedMetadata,
+  SetHintDelegatedSigned,
+  SetHintDelegatedSignedMetadata,
+  SetHintsDelegatedSigned,
+  SetHintsDelegatedSignedMetadata,
+  AddListDelegateSigned,
+  RemoveListDelegateSigned,
 }
 
 export function getSignedDataType(type: SignedDataType) {
@@ -65,6 +71,73 @@ export function getSignedDataType(type: SignedDataType) {
           {name: 'keys', type: 'bytes32[]'},
           {name: 'values', type: 'bytes32[]'},
           {name: 'metadata', type: 'bytes[]'},
+          {name: 'signer', type: 'address'},
+          {name: 'nonce', type: 'uint256'},
+        ],
+      }
+    case SignedDataType.SetHintDelegatedSigned:
+      return {
+        SetHintDelegatedSigned: [
+          {name: 'namespace', type: 'address'},
+          {name: 'list', type: 'bytes32'},
+          {name: 'key', type: 'bytes32'},
+          {name: 'value', type: 'bytes32'},
+          {name: 'signer', type: 'address'},
+          {name: 'nonce', type: 'uint256'},
+        ],
+      }
+    case SignedDataType.SetHintDelegatedSignedMetadata:
+      return {
+        SetHintDelegatedSigned: [
+          {name: 'namespace', type: 'address'},
+          {name: 'list', type: 'bytes32'},
+          {name: 'key', type: 'bytes32'},
+          {name: 'value', type: 'bytes32'},
+          {name: 'metadata', type: 'bytes'},
+          {name: 'signer', type: 'address'},
+          {name: 'nonce', type: 'uint256'},
+        ],
+      }
+    case SignedDataType.SetHintsDelegatedSigned:
+      return {
+        SetHintsDelegatedSigned: [
+          {name: 'namespace', type: 'address'},
+          {name: 'list', type: 'bytes32'},
+          {name: 'keys', type: 'bytes32[]'},
+          {name: 'values', type: 'bytes32[]'},
+          {name: 'signer', type: 'address'},
+          {name: 'nonce', type: 'uint256'},
+        ],
+      }
+    case SignedDataType.SetHintsDelegatedSignedMetadata:
+      return {
+        SetHintsDelegatedSigned: [
+          {name: 'namespace', type: 'address'},
+          {name: 'list', type: 'bytes32'},
+          {name: 'keys', type: 'bytes32[]'},
+          {name: 'values', type: 'bytes32[]'},
+          {name: 'metadata', type: 'bytes[]'},
+          {name: 'signer', type: 'address'},
+          {name: 'nonce', type: 'uint256'},
+        ],
+      }
+    case SignedDataType.AddListDelegateSigned:
+      return {
+        AddListDelegateSigned: [
+          {name: 'namespace', type: 'address'},
+          {name: 'list', type: 'bytes32'},
+          {name: 'delegate', type: 'address'},
+          {name: 'untilTimestamp', type: 'uint256'},
+          {name: 'signer', type: 'address'},
+          {name: 'nonce', type: 'uint256'},
+        ],
+      }
+    case SignedDataType.RemoveListDelegateSigned:
+      return {
+        RemoveListDelegateSigned: [
+          {name: 'namespace', type: 'address'},
+          {name: 'list', type: 'bytes32'},
+          {name: 'delegate', type: 'address'},
           {name: 'signer', type: 'address'},
           {name: 'nonce', type: 'uint256'},
         ],

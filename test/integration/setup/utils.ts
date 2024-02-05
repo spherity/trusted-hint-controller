@@ -5,7 +5,7 @@ import {
   http,
 } from "viem";
 import {sepolia} from "viem/chains";
-import {ALICE, BOB} from "./constants";
+import {ALICE, BOB, CARO} from "./constants";
 
 /**
  * The id of the current test worker.
@@ -50,6 +50,12 @@ export const aliceWalletClient = createWalletClient({
 
 export const bobWalletClient = createWalletClient({
   account: BOB,
+  chain: anvil,
+  transport: http(),
+});
+
+export const caroWalletClient = createWalletClient({
+  account: CARO,
   chain: anvil,
   transport: http(),
 });

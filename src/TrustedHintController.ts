@@ -1,4 +1,10 @@
-import {Address, getContract, GetContractReturnType, PublicClient, WalletClient} from "viem";
+import {
+  Address,
+  getContract,
+  GetContractReturnType,
+  PublicClient,
+  WalletClient
+} from "viem";
 import {TRUSTED_HINT_REGISTRY_ABI} from "@spherity/trusted-hint-registry";
 import {getDeployment, getSignedDataType, SignedDataType} from "./utils";
 
@@ -149,7 +155,6 @@ export class TrustedHintController {
       if (!signerIsOwner) {
         throw new Error(`Provided MetaTransactionWalletClient must be the owner of the namespace.`)
       }
-
       const signerNonce = await this.contract.read.nonces([metaSigner.address])
       const type = metadata
         ? getSignedDataType(SignedDataType.SetHintSignedMetadata)
@@ -287,6 +292,71 @@ export class TrustedHintController {
     }
   }
 
+  /**
+   * Sets the hint value for the given namespace, list and key as a delegate via a meta transaction. Optionally, a
+   * metadata value can be provided.
+   *
+   * This is a write operation and requires a wallet client and a meta transaction wallet client to be set. The meta
+   * transaction wallet client provides a signed EIP712 signature to the wallet client to carry out the transaction for
+   * it.
+   * @param namespace The namespace of the hint.
+   * @param list The list of the hint.
+   * @param key The key of the hint.
+   * @param value The value of the hint.
+   * @param [metadata] The optional metadata value of the hint.
+   * @returns The transaction hash of the meta transaction.
+   */
+  async setHintDelegatedSigned(namespace: Address, list: BytesHex, key: BytesHex, value: BytesHex, metadata?: BytesHex) {
+    if (!this.metaTransactionWalletClient || !this.metaTransactionWalletClient.account) {
+      throw new Error(`metaTransactionWalletClient must be set when creating a TrustedHintController instance`)
+    }
+    if (!this.walletClient?.chain || !this.walletClient?.account) {
+      throw new Error(`WalletClient must have a chain and account set.`)
+    }
+    if (this.metaTransactionWalletClient.chain?.id != this.walletClient.chain?.id) {
+      throw new Error(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
+    }
+
+    try {
+      const metaSigner = this.metaTransactionWalletClient.account
+      const signerIsDelegate = await this.isListDelegate(namespace, list, metaSigner.address)
+      if (!signerIsDelegate) {
+        throw new Error(`Provided MetaTransactionWalletClient must be a delegate of the namespace.`)
+      }
+
+      const signerNonce = await this.contract.read.nonces([metaSigner.address])
+      const type = metadata
+        ? getSignedDataType(SignedDataType.SetHintDelegatedSignedMetadata)
+        : getSignedDataType(SignedDataType.SetHintDelegatedSigned)
+      const message = metadata
+        ? { namespace, list, key, value, metadata, signer: metaSigner.address, nonce: signerNonce }
+        : { namespace, list, key, value, signer: metaSigner.address, nonce: signerNonce }
+
+      const domain = await this.getEIP712Domain()
+      const signature = await this.metaTransactionWalletClient.signTypedData({
+        account: metaSigner,
+        domain,
+        types: type,
+        primaryType: 'SetHintDelegatedSigned',
+        message: message
+      })
+
+      if (metadata) {
+        return this.contract.write.setHintDelegatedSigned(
+          [namespace, list, key, value, metadata, metaSigner.address, signature],
+          { chain: this.walletClient.chain, account: this.walletClient.account }
+        )
+      } else {
+        return this.contract.write.setHintDelegatedSigned(
+          [namespace, list, key, value, metaSigner.address, signature],
+          { chain: this.walletClient.chain, account: this.walletClient.account }
+        )
+      }
+    } catch (e: any) {
+      throw new Error(`Failed to set hint delegate signed: ${e.message}`)
+    }
+  }
+
   ///////////////////////////////////////// LIST MANAGEMENT /////////////////////////////////////////
 
   /**
@@ -339,10 +409,130 @@ export class TrustedHintController {
   }
 
   /**
+   * Add a delegate to a list via a meta transaction.
+   *
+   * This is a write operation and requires a wallet client and a meta transaction wallet client to be set. The meta
+   * transaction wallet client provides a signed EIP712 signature to the wallet client to carry out the transaction for
+   * it.
+   * @param namespace The namespace of the list.
+   * @param list The list.
+   * @param delegate The delegate to add.
+   * @param delegateUntil The timestamp until which the delegate is valid.
+   */
+  async addListDelegateSigned(namespace: Address, list: BytesHex, delegate: Address, delegateUntil: number | bigint) {
+    if (!this.metaTransactionWalletClient || !this.metaTransactionWalletClient.account) {
+      throw new Error(`metaTransactionWalletClient must be set when creating a TrustedHintController instance`)
+    }
+    if (!this.walletClient?.chain || !this.walletClient?.account) {
+      throw new Error(`WalletClient must have a chain and account set.`)
+    }
+    if (this.metaTransactionWalletClient.chain?.id != this.walletClient.chain?.id) {
+      throw new Error(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
+    }
+
+    try {
+      const metaSigner = this.metaTransactionWalletClient.account
+      const signerIsOwner = await this.isListOwner(namespace, list, metaSigner.address)
+      if (!signerIsOwner) {
+        throw new Error(`Provided MetaTransactionWalletClient must be the owner of the namespace.`)
+      }
+
+      const signerNonce = await this.contract.read.nonces([metaSigner.address])
+      const type = getSignedDataType(SignedDataType.AddListDelegateSigned)
+      const message = { namespace, list, delegate, untilTimestamp: delegateUntil, signer: metaSigner.address, nonce: signerNonce }
+
+      const domain = await this.getEIP712Domain()
+      const signature = await this.metaTransactionWalletClient.signTypedData({
+        account: metaSigner,
+        domain,
+        types: type,
+        primaryType: 'AddListDelegateSigned',
+        message: message
+      })
+
+      return this.contract.write.addListDelegateSigned(
+        [namespace, list, delegate, BigInt(delegateUntil), metaSigner.address, signature],
+        { chain: this.walletClient.chain, account: this.walletClient.account }
+      )
+    } catch (e: any) {
+      throw new Error(`Failed to add list delegate signed: ${e.message}`)
+    }
+  }
+
+  /**
    * Remove a delegate from a list.
    * @param namespace The namespace of the list.
    * @param list The list.
    * @param delegate The delegate to remove.
    */
+  async removeListDelegate(namespace: Address, list: BytesHex, delegate: Address) {
+    if (!this.walletClient?.chain || !this.walletClient?.account) {
+      throw new Error(`WalletClient must have a chain and account set.`)
+    }
+
+    try {
+      const isOwner = await this.isListOwner(namespace, list, this.walletClient.account.address)
+      if (!isOwner) {
+        throw new Error(`Provided WalletClient must be the owner of the namespace.`)
+      }
+
+      return this.contract.write.removeListDelegate([namespace, list, delegate], {
+        chain: this.walletClient.chain,
+        account: this.walletClient.account,
+      })
+    } catch (e: any) {
+      throw new Error(`Failed to remove list delegate: ${e.message}`)
+    }
+  }
+
+  /**
+   * Remove a delegate from a list via a meta transaction.
+   *
+   * This is a write operation and requires a wallet client and a meta transaction wallet client to be set. The meta
+   * transaction wallet client provides a signed EIP712 signature to the wallet client to carry out the transaction for
+   * it.
+   * @param namespace The namespace of the list.
+   * @param list The list.
+   * @param delegate The delegate to remove.
+   */
+  async removeListDelegateSigned(namespace: Address, list: BytesHex, delegate: Address) {
+    if (!this.metaTransactionWalletClient || !this.metaTransactionWalletClient.account) {
+      throw new Error(`metaTransactionWalletClient must be set when creating a TrustedHintController instance`)
+    }
+    if (!this.walletClient?.chain || !this.walletClient?.account) {
+      throw new Error(`WalletClient must have a chain and account set.`)
+    }
+    if (this.metaTransactionWalletClient.chain?.id != this.walletClient.chain?.id) {
+      throw new Error(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
+    }
+
+    try {
+      const metaSigner = this.metaTransactionWalletClient.account
+      const signerIsOwner = await this.isListOwner(namespace, list, metaSigner.address)
+      if (!signerIsOwner) {
+        throw new Error(`Provided MetaTransactionWalletClient must be the owner of the namespace.`)
+      }
+
+      const signerNonce = await this.contract.read.nonces([metaSigner.address])
+      const type = getSignedDataType(SignedDataType.RemoveListDelegateSigned)
+      const message = {namespace, list, delegate, signer: metaSigner.address, nonce: signerNonce}
+
+      const domain = await this.getEIP712Domain()
+      const signature = await this.metaTransactionWalletClient.signTypedData({
+        account: metaSigner,
+        domain,
+        types: type,
+        primaryType: 'RemoveListDelegateSigned',
+        message: message
+      })
+
+      return this.contract.write.removeListDelegateSigned(
+        [namespace, list, delegate, metaSigner.address, signature],
+        {chain: this.walletClient.chain, account: this.walletClient.account}
+      )
+    } catch (e: any) {
+      throw new Error(`Failed to remove list delegate signed: ${e.message}`)
+    }
+  }
 }
 
