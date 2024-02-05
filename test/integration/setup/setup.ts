@@ -1,12 +1,12 @@
 import {fetchLogs} from "@viem/anvil";
 import {afterEach} from "vitest";
-import {FORK_URL} from "./constants";
+import {FORK_BLOCK_NUMBER, FORK_URL} from "./constants";
 import {pool, testClient} from "./utils";
 
 afterEach(async (context) => {
   await testClient.reset({
     jsonRpcUrl: FORK_URL,
-    blockNumber: BigInt(5225802),
+    blockNumber: FORK_BLOCK_NUMBER,
   });
 
   context.onTestFailed(async () => {
