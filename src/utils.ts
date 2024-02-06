@@ -25,6 +25,10 @@ export enum SignedDataType {
   SetHintsDelegatedSignedMetadata,
   AddListDelegateSigned,
   RemoveListDelegateSigned,
+  SetListStatusSigned,
+  SetListOwnerSigned,
+  SetMetadataSigned,
+  SetMetadataDelegatedSigned
 }
 
 export function getSignedDataType(type: SignedDataType) {
@@ -138,6 +142,50 @@ export function getSignedDataType(type: SignedDataType) {
           {name: 'namespace', type: 'address'},
           {name: 'list', type: 'bytes32'},
           {name: 'delegate', type: 'address'},
+          {name: 'signer', type: 'address'},
+          {name: 'nonce', type: 'uint256'},
+        ],
+      }
+    case SignedDataType.SetListStatusSigned:
+      return {
+        SetListStatusSigned: [
+          {name: 'namespace', type: 'address'},
+          {name: 'list', type: 'bytes32'},
+          {name: 'revoked', type: 'bool'},
+          {name: 'signer', type: 'address'},
+          {name: 'nonce', type: 'uint256'},
+        ],
+      }
+    case SignedDataType.SetListOwnerSigned:
+      return {
+        SetListOwnerSigned: [
+          {name: 'namespace', type: 'address'},
+          {name: 'list', type: 'bytes32'},
+          {name: 'newOwner', type: 'address'},
+          {name: 'signer', type: 'address'},
+          {name: 'nonce', type: 'uint256'},
+        ],
+      }
+    case SignedDataType.SetMetadataSigned:
+      return {
+        SetMetadataSigned: [
+          {name: 'namespace', type: 'address'},
+          {name: 'list', type: 'bytes32'},
+          {name: 'key', type: 'bytes32'},
+          {name: 'value', type: 'bytes32'},
+          {name: 'metadata', type: 'bytes'},
+          {name: 'signer', type: 'address'},
+          {name: 'nonce', type: 'uint256'},
+        ],
+      }
+    case SignedDataType.SetMetadataDelegatedSigned:
+      return {
+        SetMetadataDelegatedSigned: [
+          {name: 'namespace', type: 'address'},
+          {name: 'list', type: 'bytes32'},
+          {name: 'key', type: 'bytes32'},
+          {name: 'value', type: 'bytes32'},
+          {name: 'metadata', type: 'bytes'},
           {name: 'signer', type: 'address'},
           {name: 'nonce', type: 'uint256'},
         ],
