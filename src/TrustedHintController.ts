@@ -1,7 +1,7 @@
 import {
-  Address,
+  Address, encodePacked,
   getContract,
-  GetContractReturnType,
+  GetContractReturnType, keccak256,
   PublicClient,
   WalletClient
 } from "viem";
@@ -523,6 +523,17 @@ export class TrustedHintController {
    */
   async isListOwner(namespace: Address, list: BytesHex, owner: Address): Promise<boolean> {
     return this.contract.read.identityIsOwner([namespace, list, owner])
+  }
+
+  /**
+   * Check if a list is revoked.
+   * @param namespace The namespace of the list.
+   * @param list The list.
+   * @returns A boolean indicating whether the given list is revoked in the namespace.
+   */
+  async isListRevoked(namespace: Address, list: BytesHex): Promise<boolean> {
+    const listLocationHash = keccak256(encodePacked(['address', 'bytes32'], [namespace, list]))
+    return this.contract.read.revokedLists([listLocationHash])
   }
 
   /**

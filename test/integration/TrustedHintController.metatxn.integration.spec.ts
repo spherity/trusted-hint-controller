@@ -4,7 +4,7 @@ import {beforeAll, describe, expect, it} from "vitest";
 import {TrustedHintController} from "../../src";
 import {bytesToHex, keccak256, stringToBytes, toHex} from "viem";
 
-describe("TrustedHintController Metatxn (Integration)", () => {
+describe("TrustedHintController (Meta Transaction)", () => {
   let controller: TrustedHintController;
 
   beforeAll(async () => {
@@ -13,7 +13,7 @@ describe("TrustedHintController Metatxn (Integration)", () => {
     });
   })
 
-  it("should set a hint signed from bobs account with signed payload from alice", async () => {
+  it("should set a hint signed", async () => {
     const metaTxSupportedController = new TrustedHintController({
       walletClient: bobWalletClient,
       metaTransactionWalletClient: aliceWalletClient,
@@ -29,7 +29,7 @@ describe("TrustedHintController Metatxn (Integration)", () => {
     expect(newlySetHint).toBe(value);
   })
 
-  it("should set a hint signed from bobs account with signed payload from alice with metadata", async () => {
+  it("should set a hint signed with metadata", async () => {
     const metaTxSupportedController = new TrustedHintController({
       walletClient: bobWalletClient,
       metaTransactionWalletClient: aliceWalletClient,
@@ -49,7 +49,7 @@ describe("TrustedHintController Metatxn (Integration)", () => {
     expect(newlySetHintMetadata).toBe(metadata);
   })
 
-  it("should set multiple hints in a batch from bobs account with signed payload from alice", async () => {
+  it("should set multiple hints signed", async () => {
     const metaTxSupportedController = new TrustedHintController({
       walletClient: bobWalletClient,
       metaTransactionWalletClient: aliceWalletClient,
@@ -66,7 +66,7 @@ describe("TrustedHintController Metatxn (Integration)", () => {
     expect(newlySetHints).toEqual(values);
   })
 
-  it("should set multiple hints in a batch from bobs account with signed payload from alice with metadata", async () => {
+  it("should set multiple hints signed with metadata", async () => {
     const metaTxSupportedController = new TrustedHintController({
       walletClient: bobWalletClient,
       metaTransactionWalletClient: aliceWalletClient,
@@ -86,7 +86,7 @@ describe("TrustedHintController Metatxn (Integration)", () => {
     expect(newlySetHintsMetadata).toEqual(metadata);
   })
 
-  it("should add a delegate to a list with a meta-transaction", async () => {
+  it("should add a delegate to a list signed", async () => {
     const list = bytesToHex(stringToBytes("list"), {size: 32})
     const delegate = BOB
     const delegateUntil = new Date().getTime() + 9999
@@ -103,7 +103,7 @@ describe("TrustedHintController Metatxn (Integration)", () => {
     expect(isNowDelegate).toBeTruthy();
   })
 
-  it("should remove a delegate from a list with a meta-transaction", async () => {
+  it("should remove a delegate from a list signed", async () => {
     const list = bytesToHex(stringToBytes("list"), {size: 32})
     const delegate = BOB
     const delegateUntil = new Date().getTime() + 9999
@@ -124,7 +124,7 @@ describe("TrustedHintController Metatxn (Integration)", () => {
     expect(isNowDelegate2).toBeFalsy();
   })
 
-  it("should add a hint signed by a delegate via a meta-transaction", async () => {
+  it("should add a hint signed by a delegate signed", async () => {
     const namespace = ALICE
     const list = bytesToHex(stringToBytes("list"), {size: 32})
     const key = bytesToHex(stringToBytes("key"), {size: 32})
@@ -145,7 +145,7 @@ describe("TrustedHintController Metatxn (Integration)", () => {
     expect(newlySetHint).toBe(value);
   })
 
-  it("should add a hint with metadata signed by a delegate via a meta-transaction", async () => {
+  it("should add a hint with metadata signed by a delegate", async () => {
     const namespace = ALICE
     const list = bytesToHex(stringToBytes("list"), {size: 32})
     const key = bytesToHex(stringToBytes("key"), {size : 32})
@@ -167,5 +167,87 @@ describe("TrustedHintController Metatxn (Integration)", () => {
     expect(hint).toBeDefined();
     expect(newlySetHint).toBe(value);
     expect(newlySetHintMetadata).toBe(metadata);
+  })
+
+  it("should set multiple hints signed by a delegate", async () => {
+    const namespace = ALICE
+    const list = bytesToHex(stringToBytes("list"), {size: 32})
+    const keys = Array.from(Array(3)).map((_, index) => bytesToHex(stringToBytes(`key_${index}`), {size: 32}));
+    const values = Array.from(Array(3)).map((_, index) => bytesToHex(stringToBytes(`value_${index}`), {size: 32}));
+    const delegate = BOB
+    const delegateUntil = new Date().getTime() + 9999
+
+    const metaTxSupportedController = new TrustedHintController({
+      walletClient: caroWalletClient,
+      metaTransactionWalletClient: bobWalletClient,
+    });
+
+    await controller.addListDelegate(ALICE, list, delegate, delegateUntil);
+    const hint = await metaTxSupportedController.setHintsDelegatedSigned(namespace, list, keys, values);
+    const newlySetHints = await Promise.all(keys.map((key) => controller.getHint(ALICE, list, key)));
+
+    expect(hint).toBeDefined();
+    expect(newlySetHints).toEqual(values);
+  })
+
+  it("should set multiple hints signed by a delegate with metadata", async () => {
+    const namespace = ALICE
+    const list = bytesToHex(stringToBytes("list"), {size: 32})
+    const keys = Array.from(Array(3)).map((_, index) => bytesToHex(stringToBytes(`key_${index}`), {size: 32}));
+    const values = Array.from(Array(3)).map((_, index) => bytesToHex(stringToBytes(`value_${index}`), {size: 32}));
+    const metadata = Array.from(Array(3)).map((_, index) => bytesToHex(stringToBytes(`metadata_${index}`), {size: 32}));
+    const delegate = BOB
+    const delegateUntil = new Date().getTime() + 9999
+
+    const metaTxSupportedController = new TrustedHintController({
+      walletClient: caroWalletClient,
+      metaTransactionWalletClient: bobWalletClient,
+    });
+
+    await controller.addListDelegate(ALICE, list, delegate, delegateUntil);
+    const hint = await metaTxSupportedController.setHintsDelegatedSigned(namespace, list, keys, values, metadata);
+    const newlySetHints = await Promise.all(keys.map((key) => controller.getHint(ALICE, list, key)));
+    const newlySetHintsMetadata = await Promise.all(keys.map((key, index) => controller.contract.read.getMetadata([ALICE, list, key, values[index]!])));
+
+    expect(hint).toBeDefined();
+    expect(newlySetHints).toEqual(values);
+    expect(newlySetHintsMetadata).toEqual(metadata);
+  })
+
+  it("should revoke a list signed", async () => {
+    const list = bytesToHex(stringToBytes("list"), {size: 32})
+    const status = true
+
+    const metaTxSupportedController = new TrustedHintController({
+      walletClient: bobWalletClient,
+      metaTransactionWalletClient: aliceWalletClient,
+    });
+
+    const hint = await metaTxSupportedController.setListStatusSigned(ALICE, list, status);
+    const newlySetStatus = await controller.isListRevoked(ALICE, list);
+
+    expect(hint).toBeDefined();
+    expect(newlySetStatus).toBe(status);
+  })
+
+  it("should change the owner of a list signed", async () => {
+    const list = bytesToHex(stringToBytes("list"), {size: 32})
+    const newOwner = BOB
+
+    const oldOwnerIsAlice = await controller.isListOwner(ALICE, list, ALICE);
+
+    const metaTxSupportedController = new TrustedHintController({
+      walletClient: bobWalletClient,
+      metaTransactionWalletClient: aliceWalletClient,
+    });
+    const setOwner = await metaTxSupportedController.setListOwnerSigned(ALICE, list, newOwner);
+
+    const newOwnerIsBob = await controller.isListOwner(ALICE, list, newOwner);
+    const newOwnerIsNotAlice = await controller.isListOwner(ALICE, list, ALICE);
+
+    expect(setOwner).toBeDefined();
+    expect(oldOwnerIsAlice).toBeTruthy()
+    expect(newOwnerIsBob).toBeTruthy()
+    expect(newOwnerIsNotAlice).toBeFalsy()
   })
 });
