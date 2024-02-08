@@ -973,7 +973,7 @@ export class TrustedHintController {
    * @param metadata The metadata value.
    * @returns The transaction hash of the meta transaction.
    */
-  async setMetadataDelegate(namespace: Address, list: BytesHex, key: BytesHex, value: BytesHex, metadata: BytesHex) {
+  async setMetadataDelegated(namespace: Address, list: BytesHex, key: BytesHex, value: BytesHex, metadata: BytesHex) {
     if (!this.walletClient?.chain || !this.walletClient?.account) {
       throw new Error(`WalletClient must have a chain and account set.`)
     }

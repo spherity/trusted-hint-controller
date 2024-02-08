@@ -250,4 +250,48 @@ describe("TrustedHintController (Meta Transaction)", () => {
     expect(newOwnerIsBob).toBeTruthy()
     expect(newOwnerIsNotAlice).toBeFalsy()
   })
+
+  it("should set metadata signed", async () => {
+    const list = bytesToHex(stringToBytes("list"), {size: 32})
+    const key = bytesToHex(stringToBytes("key"), {size: 32})
+    const value = bytesToHex(stringToBytes("value"), {size: 32})
+    const metadata = bytesToHex(stringToBytes("metadata"))
+
+    const metaTxSupportedController = new TrustedHintController({
+      walletClient: bobWalletClient,
+      metaTransactionWalletClient: aliceWalletClient,
+    });
+
+    const oldHintMetadata = await controller.getMetadata(ALICE, list, key, value);
+    const hint = await metaTxSupportedController.setMetadataSigned(ALICE, list, key, value, metadata);
+    const newlySetHintMetadata = await controller.getMetadata(ALICE, list, key, value);
+
+    expect(hint).toBeDefined();
+    expect(oldHintMetadata).not.toBe(metadata);
+    expect(newlySetHintMetadata).toBe(metadata);
+  })
+
+  it("should set metadata signed by a delegate", async () => {
+    const namespace = ALICE
+    const list = bytesToHex(stringToBytes("list"), {size: 32})
+    const key = bytesToHex(stringToBytes("key"), {size: 32})
+    const value = bytesToHex(stringToBytes("value"), {size: 32})
+    const metadata = bytesToHex(stringToBytes("metadata"))
+    const delegate = BOB
+    const delegateUntil = new Date().getTime() + 9999
+
+    const metaTxSupportedController = new TrustedHintController({
+      walletClient: caroWalletClient,
+      metaTransactionWalletClient: bobWalletClient,
+    });
+
+    const oldHintMetadata = await controller.getMetadata(ALICE, list, key, value);
+    await controller.addListDelegate(ALICE, list, delegate, delegateUntil);
+    const hash = await metaTxSupportedController.setMetadataDelegatedSigned(namespace, list, key, value, metadata);
+    const newlySetHintMetadata = await controller.getMetadata(ALICE, list, key, value);
+
+    expect(hash).toBeDefined();
+    expect(oldHintMetadata).not.toBe(metadata);
+    expect(newlySetHintMetadata).toBe(metadata);
+  })
 });

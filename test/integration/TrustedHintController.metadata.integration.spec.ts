@@ -87,4 +87,39 @@ describe("TrustedHintController (Metadata)", () => {
     expect(newlySetHints).toEqual(values);
     expect(newlySetHintsMetadata).toEqual(metadata);
   })
+
+  it("should set and get metadata", async () => {
+    const list = bytesToHex(stringToBytes("list"), {size: 32})
+    const key = bytesToHex(stringToBytes("key"), {size : 32})
+    const value = bytesToHex(stringToBytes("value"), {size: 32})
+    const metadata = bytesToHex(stringToBytes("metadata"))
+
+    const oldMetadataValue = await controller.getMetadata(ALICE, list, key, value);
+    await controller.setMetadata(ALICE, list, key, value, metadata);
+    const newMetadataValue = await controller.getMetadata(ALICE, list, key, value);
+
+    expect(oldMetadataValue).toBe("0x");
+    expect(newMetadataValue).toBe(metadata);
+  })
+
+  it("should set and get metadata with a delegate", async () => {
+    const list = bytesToHex(stringToBytes("list"), {size: 32})
+    const key = bytesToHex(stringToBytes("key"), {size : 32})
+    const value = bytesToHex(stringToBytes("value"), {size: 32})
+    const metadata = bytesToHex(stringToBytes("metadata"))
+    const delegate = BOB
+    const delegateUntil = new Date().getTime() + 9999
+
+    const delegateController = new TrustedHintController({
+      walletClient: bobWalletClient,
+    });
+
+    await controller.addListDelegate(ALICE, list, delegate, delegateUntil);
+    const oldMetadataValue = await delegateController.getMetadata(ALICE, list, key, value);
+    await delegateController.setMetadataDelegated(ALICE, list, key, value, metadata);
+    const newMetadataValue = await delegateController.getMetadata(ALICE, list, key, value);
+
+    expect(oldMetadataValue).toBe("0x");
+    expect(newMetadataValue).toBe(metadata);
+  })
 });
