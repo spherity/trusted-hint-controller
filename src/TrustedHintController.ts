@@ -328,7 +328,7 @@ export class TrustedHintController {
         })
       }
     } catch (e: any) {
-      throw new Error(`Failed to set hint delegate signed: ${e.message}`)
+      throw new Error(`Failed to set hint delegated: ${e.message}`)
     }
   }
 
@@ -433,7 +433,7 @@ export class TrustedHintController {
         })
       }
     } catch (e: any) {
-      throw new Error(`Failed to set hints delegate signed: ${e.message}`)
+      throw new Error(`Failed to set hints delegated: ${e.message}`)
     }
   }
 
