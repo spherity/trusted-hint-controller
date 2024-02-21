@@ -1,6 +1,6 @@
 import {describe, vi, beforeAll, afterEach, it, expect} from "vitest";
 import { TrustedHintController } from "../../src";
-import {createPublicClient, createWalletClient, keccak256} from "viem";
+import {createPublicClient, createWalletClient} from "viem";
 import {BytesHex} from "../../src/TrustedHintController";
 
 const mocks = vi.hoisted(() => {
