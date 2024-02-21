@@ -989,7 +989,7 @@ export class TrustedHintController {
         account: this.walletClient.account,
       })
     } catch (e: any) {
-      throw new Error(`Failed to set metadata delegate: ${e.message}`)
+      throw new Error(`Failed to set metadata delegated: ${e.message}`)
     }
   }
 

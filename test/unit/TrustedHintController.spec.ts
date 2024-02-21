@@ -1,6 +1,6 @@
 import {describe, vi, beforeAll, afterEach, it, expect} from "vitest";
 import { TrustedHintController } from "../../src";
-import {createPublicClient, createWalletClient} from "viem";
+import {createPublicClient, createWalletClient, keccak256} from "viem";
 import {BytesHex} from "../../src/TrustedHintController";
 
 const mocks = vi.hoisted(() => {
@@ -24,6 +24,8 @@ const mocks = vi.hoisted(() => {
         address: "0x0",
         read: {
           getHint: vi.fn(),
+          getMetadata: vi.fn(),
+          revokedLists: vi.fn(),
           version: vi.fn(),
           nonces: vi.fn(),
           identityIsOwner: vi.fn(),
@@ -46,8 +48,14 @@ const mocks = vi.hoisted(() => {
           setListStatusSigned: vi.fn(),
           setListOwner: vi.fn(),
           setListOwnerSigned: vi.fn(),
+          setMetadata: vi.fn(),
+          setMetadataSigned: vi.fn(),
+          setMetadataDelegated: vi.fn(),
+          setMetadataDelegatedSigned: vi.fn(),
         }
       })),
+      keccak256: vi.fn(),
+      encodePacked: vi.fn(),
     },
     utils: {
       getDeployment: vi.fn(() => ({
@@ -568,6 +576,38 @@ describe("TrustedHintController", () => {
     })
   })
 
+  it("should return if an identity is a list delegate", async () => {
+    const result = true
+    vi.spyOn(controller.contract.read, "identityIsDelegate").mockImplementationOnce(async () => result);
+
+    const hint = await controller.isListDelegate("0x0", "0x0", "0x0");
+
+    expect(controller.contract.read.identityIsDelegate).toHaveBeenCalledWith(["0x0", "0x0", "0x0"]);
+    expect(hint).toBe(result);
+  })
+
+  it("should return if an identity is a list owner", async () => {
+    const result = true
+    vi.spyOn(controller.contract.read, "identityIsOwner").mockImplementationOnce(async () => result);
+
+    const hint = await controller.isListOwner("0x0", "0x0", "0x0");
+
+    expect(controller.contract.read.identityIsOwner).toHaveBeenCalledWith(["0x0", "0x0", "0x0"]);
+    expect(hint).toBe(result);
+  })
+
+  it("should return if a list is revoked", async () => {
+    const result = true
+    vi.spyOn(mocks.viem, "keccak256").mockImplementation(() => "0x0");
+    vi.spyOn(mocks.viem, "encodePacked").mockImplementation(() => "0x0");
+    vi.spyOn(controller.contract.read, "revokedLists").mockImplementationOnce(async () => result);
+
+    const hint = await controller.isListRevoked("0x0", "0x0");
+
+    expect(controller.contract.read.revokedLists).toHaveBeenCalledWith(["0x0"]);
+    expect(hint).toBe(result);
+  })
+
   describe("add list delegate", () => {
     it("should add a list delegate", async () => {
       const result = "0x0"
@@ -977,6 +1017,210 @@ describe("TrustedHintController", () => {
 
       await expect(controllerWithoutWallet.setListOwnerSigned("0x0", "0x0", "0x0"))
         .rejects.toThrow("Failed to set list owner signed: Provided MetaTransactionWalletClient must be the owner of the namespace.");
+    })
+  })
+
+  it("should get metatadata of a hint", async () => {
+    const result = "0x0"
+    vi.spyOn(controller.contract.read, "getMetadata").mockImplementationOnce(async () => result);
+
+    const hint = await controller.getMetadata("0x0", "0x0", "0x0", "0x0");
+
+    expect(controller.contract.read.getMetadata).toHaveBeenCalledWith(["0x0", "0x0", "0x0", "0x0"]);
+    expect(hint).toBe(result);
+  })
+
+  describe("set metadata on a hint", () => {
+    it("should set metadata on a hint", async () => {
+      const result = "0x0"
+      vi.spyOn(controller.contract.write, "setMetadata").mockImplementationOnce(async () => result);
+      vi.spyOn(controller.contract.read, "identityIsOwner").mockImplementationOnce(async () => true);
+
+      const hint = await controller.setMetadata("0x0", "0x0", "0x0", "0x0", "0x0");
+
+      expect(controller.contract.write.setMetadata).toHaveBeenCalledWith(["0x0", "0x0", "0x0", "0x0", "0x0"], {
+        chain: mocks.viem.createWalletClient().chain,
+        account: mocks.viem.createWalletClient().account,
+      });
+      expect(hint).toBe(result);
+    })
+    it("should throw if no wallet client is set", async () => {
+      const controllerWithoutWallet = new TrustedHintController({
+        readClient: createPublicClient({} as any),
+      });
+      await expect(controllerWithoutWallet.setMetadata("0x0", "0x0", "0x0", "0x0", "0x0"))
+        .rejects.toThrow("WalletClient must have a chain and account set.");
+    })
+    it("should throw if caller is not the owner of the namespace", async () => {
+      vi.spyOn(controller.contract.read, "identityIsOwner").mockImplementationOnce(async () => false);
+      await expect(controller.setMetadata("0x0", "0x0", "0x0", "0x0", "0x0"))
+        .rejects.toThrow("Failed to set metadata: Provided WalletClient must be the owner of the namespace.");
+    })
+  })
+
+  describe("set metadata on a hint signed", () => {
+    it("should set metadata on a hint signed", async () => {
+      const result = "0x0"
+      const version = "1.0.0"
+      const nonce = BigInt(1)
+
+      vi.spyOn(controller.contract.read, "version").mockImplementationOnce(async () => version);
+      vi.spyOn(controller.contract.read, "nonces").mockImplementationOnce(async () => nonce);
+      vi.spyOn(controller.contract.read, "identityIsOwner").mockImplementationOnce(async () => true);
+      vi.spyOn(controller.contract.write, "setMetadataSigned").mockImplementationOnce(async () => result);
+      // @ts-ignore
+      vi.spyOn(controller.metaTransactionWalletClient, "signTypedData").mockImplementationOnce(async () => "0x0");
+
+      const hint = await controller.setMetadataSigned("0x0", "0x0", "0x0", "0x0", "0x0");
+
+      expect(controller.contract.write.setMetadataSigned).toHaveBeenCalledWith(["0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0"], {
+        chain: mocks.viem.createWalletClient().chain,
+        account: mocks.viem.createWalletClient().account,
+      });
+      expect(hint).toBe(result);
+    })
+    it("should throw if no meta transaction wallet client is set", async () => {
+      const controllerWithoutWallet = new TrustedHintController({
+        walletClient: createWalletClient({} as any),
+      });
+      await expect(controllerWithoutWallet.setMetadataSigned("0x0", "0x0", "0x0", "0x0", "0x0"))
+        .rejects.toThrow("metaTransactionWalletClient must be set when creating a TrustedHintController instance");
+    })
+    it("should throw if no wallet client is set", async () => {
+      vi.spyOn(mocks.viem, "createWalletClient").mockImplementationOnce(() => ({
+        signTypedData: vi.fn(),
+      } as any));
+      const controllerWithoutWallet = new TrustedHintController({
+        walletClient: createWalletClient({} as any),
+        metaTransactionWalletClient: createWalletClient({} as any),
+      });
+      await expect(controllerWithoutWallet.setMetadataSigned("0x0", "0x0", "0x0", "0x0", "0x0"))
+        .rejects.toThrow("WalletClient must have a chain and account set.");
+    })
+    it("should throw if wallet client and meta transaction wallet client are not on the same chain", async () => {
+      vi.spyOn(mocks.viem, "createWalletClient").mockImplementationOnce(() => ({
+        chain: {
+          id: 7777777777,
+        },
+        account: {
+          address: "0x0",
+        }
+      } as any));
+      const controllerWithoutWallet = new TrustedHintController({
+        walletClient: createWalletClient({} as any),
+        metaTransactionWalletClient: createWalletClient({} as any),
+      });
+      await expect(controllerWithoutWallet.setMetadataSigned("0x0", "0x0", "0x0", "0x0", "0x0"))
+        .rejects.toThrow("Provided WalletClient and MetaTransactionWalletClient must be on the same chain.");
+    })
+    it("should throw if meta transaction wallet client is not the owner of the namespace", async () => {
+      vi.spyOn(mocks.viem, "createWalletClient").mockImplementationOnce(() => ({
+        chain: {
+          id: 0,
+        },
+        account: {
+          address: "0x0",
+        }
+      } as any));
+      vi.spyOn(mocks.viem, "createPublicClient").mockImplementationOnce(() => ({
+        chain: {
+          id: 0,
+        },
+      } as any));
+      vi.spyOn(controller.contract.read, "identityIsOwner").mockImplementationOnce(async () => false);
+
+      const controllerWithoutWallet = new TrustedHintController({
+        walletClient: createWalletClient({} as any),
+        metaTransactionWalletClient: createWalletClient({} as any),
+      });
+
+      await expect(controllerWithoutWallet.setMetadataSigned("0x0", "0x0", "0x0", "0x0", "0x0"))
+        .rejects.toThrow("Failed to set metadata signed: Provided MetaTransactionWalletClient must be the owner of the namespace.");
+    })
+  })
+
+  describe("set metadata delegated", () => {
+    it("should set metadata delegated", async () => {
+      const result = "0x0"
+      vi.spyOn(controller.contract.write, "setMetadataDelegated").mockImplementationOnce(async () => result);
+      vi.spyOn(controller.contract.read, "identityIsDelegate").mockImplementationOnce(async () => true);
+
+      const hint = await controller.setMetadataDelegated("0x0", "0x0", "0x0", "0x0", "0x0");
+
+      expect(controller.contract.write.setMetadataDelegated).toHaveBeenCalledWith(["0x0", "0x0", "0x0", "0x0", "0x0"], {
+        chain: mocks.viem.createWalletClient().chain,
+        account: mocks.viem.createWalletClient().account,
+      });
+      expect(hint).toBe(result);
+    })
+    it("should throw if no wallet client is set", async () => {
+      const controllerWithoutWallet = new TrustedHintController({
+        readClient: createPublicClient({} as any),
+      });
+      await expect(controllerWithoutWallet.setMetadataDelegated("0x0", "0x0", "0x0", "0x0", "0x0"))
+        .rejects.toThrow("WalletClient must have a chain and account set.");
+    })
+    it("should throw if caller is not a delegate of the namespace", async () => {
+      vi.spyOn(controller.contract.read, "identityIsDelegate").mockImplementationOnce(async () => false);
+      await expect(controller.setMetadataDelegated("0x0", "0x0", "0x0", "0x0", "0x0"))
+        .rejects.toThrow("Failed to set metadata delegated: Provided WalletClient must be a delegate of the namespace.");
+    })
+  })
+
+  describe("set metadata delegated signed", () => {
+    it("should set metadata delegated signed", async () => {
+      const result = "0x0"
+      const version = "1.0.0"
+      const nonce = BigInt(1)
+
+      vi.spyOn(controller.contract.read, "version").mockImplementationOnce(async () => version);
+      vi.spyOn(controller.contract.read, "nonces").mockImplementationOnce(async () => nonce);
+      vi.spyOn(controller.contract.read, "identityIsDelegate").mockImplementationOnce(async () => true);
+      vi.spyOn(controller.contract.write, "setMetadataDelegatedSigned").mockImplementationOnce(async () => result);
+      // @ts-ignore
+      vi.spyOn(controller.metaTransactionWalletClient, "signTypedData").mockImplementationOnce(async () => "0x0");
+
+      const hint = await controller.setMetadataDelegatedSigned("0x0", "0x0", "0x0", "0x0", "0x0");
+
+      expect(controller.contract.write.setMetadataDelegatedSigned).toHaveBeenCalledWith(["0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0"], {
+        chain: mocks.viem.createWalletClient().chain,
+        account: mocks.viem.createWalletClient().account,
+      });
+      expect(hint).toBe(result);
+    })
+    it("should throw if no meta transaction wallet client is set", async () => {
+      const controllerWithoutWallet = new TrustedHintController({
+        walletClient: createWalletClient({} as any),
+      });
+      await expect(controllerWithoutWallet.setMetadataDelegatedSigned("0x0", "0x0", "0x0", "0x0", "0x0"))
+        .rejects.toThrow("metaTransactionWalletClient must be set when creating a TrustedHintController instance");
+    })
+    it("should throw if no wallet client is set", async () => {
+      vi.spyOn(mocks.viem, "createWalletClient").mockImplementationOnce(() => ({
+        signTypedData: vi.fn(),
+      } as any));
+      const controllerWithoutWallet = new TrustedHintController({
+        walletClient: createWalletClient({} as any),
+        metaTransactionWalletClient: createWalletClient({} as any),
+      });
+      await expect(controllerWithoutWallet.setMetadataDelegatedSigned("0x0", "0x0", "0x0", "0x0", "0x0"))
+        .rejects.toThrow("WalletClient must have a chain and account set.");
+    })
+    it("should throw if wallet client and meta transaction wallet client are not on the same chain", async () => {
+      vi.spyOn(mocks.viem, "createWalletClient").mockImplementationOnce(() => ({
+        chain: {
+          id: 7777777777,
+        },
+        account: {
+          address: "0x0",
+        }
+      } as any));
+      const controllerWithoutWallet = new TrustedHintController({
+        walletClient: createWalletClient({} as any),
+        metaTransactionWalletClient: createWalletClient({} as any),
+      });
+      await expect(controllerWithoutWallet.setMetadataDelegatedSigned("0x0", "0x0", "0x0", "0x0", "0x0"))
+        .rejects.toThrow("Provided WalletClient and MetaTransactionWalletClient must be on the same chain.");
     })
   })
 })
