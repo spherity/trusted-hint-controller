@@ -328,7 +328,7 @@ export class TrustedHintController {
         })
       }
     } catch (e: any) {
-      throw new Error(`Failed to set hint delegate signed: ${e.message}`)
+      throw new Error(`Failed to set hint delegated: ${e.message}`)
     }
   }
 
@@ -433,7 +433,7 @@ export class TrustedHintController {
         })
       }
     } catch (e: any) {
-      throw new Error(`Failed to set hints delegate signed: ${e.message}`)
+      throw new Error(`Failed to set hints delegated: ${e.message}`)
     }
   }
 
@@ -989,7 +989,7 @@ export class TrustedHintController {
         account: this.walletClient.account,
       })
     } catch (e: any) {
-      throw new Error(`Failed to set metadata delegate: ${e.message}`)
+      throw new Error(`Failed to set metadata delegated: ${e.message}`)
     }
   }
 
