@@ -1,7 +1,7 @@
 {
   "name": "@spherity/trusted-hint-controller",
   "version": "1.0.0",
-  "description": "",
+  "description": "A controller library for handling ERC-7506 compliant Trusted Hints",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -29,9 +29,9 @@
     "type": "git",
     "url": "git+https://github.com/spherity/trusted-hint-controller.git"
   },
-  "keywords": [],
+  "keywords": ["erc-7506", "trusted-hint", "decentralized-identity", "did"],
   "author": "Philipp Bolte",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/spherity/trusted-hint-controller/issues"
   },
@@ -44,6 +44,6 @@
   "dependencies": {
     "@spherity/trusted-hint-registry": "^1.0.3",
     "@viem/anvil": "^0.0.7",
-    "viem": "^2.5.0"
+    "viem": "^2.7.15"
   }
 }
