@@ -20,9 +20,4 @@ if (!process.env.VITE_ANVIL_FORK_URL) {
 }
 
 export const FORK_URL = process.env.VITE_ANVIL_FORK_URL;
-
-if (!process.env.VITE_ANVIL_BLOCK_NUMBER) {
-  throw new Error('Missing environment variable "VITE_ANVIL_BLOCK_NUMBER"');
-}
-
 export const FORK_BLOCK_NUMBER = BigInt(5238916);
