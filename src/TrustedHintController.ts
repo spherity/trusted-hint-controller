@@ -7,6 +7,14 @@ import {
 } from "viem";
 import {TRUSTED_HINT_REGISTRY_ABI} from "@spherity/trusted-hint-registry";
 import {getDeployment, getSignedDataType, SignedDataType} from "./utils";
+import {
+  ClientMisconfiguredError,
+  ClientNotSetError,
+  DelegateManagementError,
+  HintSetError, ListOwnerError, ListStatusError, MetadataOperationError,
+  NotDelegateError,
+  NotOwnerError
+} from "./errors";
 
 interface WalletClientOnly {
   walletClient: WalletClient;
@@ -42,7 +50,7 @@ export class TrustedHintController {
     this.metaTransactionWalletClient = config.metaTransactionWalletClient;
 
     if (!this.readClient && !this.walletClient) {
-      throw new Error(`Either readClient or walletClient must be provided`)
+      throw new ClientNotSetError('WalletClient or ReadClient')
     }
 
     if (!config.registryAddress) {
@@ -61,7 +69,7 @@ export class TrustedHintController {
 
   private async getEIP712Domain() {
     if (!this.metaTransactionWalletClient?.chain) {
-      throw new Error(`WalletClient must have a chain set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain set.`)
     }
     return {
       name: 'TrustedHintRegistry',
@@ -99,13 +107,13 @@ export class TrustedHintController {
    */
   async setHint(namespace: Address, list: BytesHex, key: BytesHex, value: BytesHex, metadata?: BytesHex) {
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
 
     try {
       const isOwner = await this.isListOwner(namespace, list, this.walletClient.account.address)
       if (!isOwner) {
-        throw new Error(`Provided WalletClient must be the owner of the namespace.`)
+        throw new NotOwnerError("WalletClient")
       }
 
       if (metadata) {
@@ -120,7 +128,7 @@ export class TrustedHintController {
         })
       }
     } catch (e: any) {
-      throw new Error(`Failed to set hint: ${e.message}`)
+      throw new HintSetError(e.message);
     }
   }
 
@@ -140,20 +148,20 @@ export class TrustedHintController {
    */
   async setHintSigned(namespace: Address, list: BytesHex, key: BytesHex, value: BytesHex, metadata?: BytesHex) {
     if (!this.metaTransactionWalletClient || !this.metaTransactionWalletClient.account) {
-      throw new Error(`metaTransactionWalletClient must be set when creating a TrustedHintController instance`)
+      throw new ClientNotSetError("MetaTransactionWalletClient")
     }
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
     if (this.metaTransactionWalletClient.chain?.id != this.walletClient.chain?.id) {
-      throw new Error(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
+      throw new ClientMisconfiguredError(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
     }
 
     try {
       const metaSigner = this.metaTransactionWalletClient.account
       const signerIsOwner = await this.isListOwner(namespace, list, metaSigner.address)
       if (!signerIsOwner) {
-        throw new Error(`Provided MetaTransactionWalletClient must be the owner of the namespace.`)
+        throw new NotOwnerError("MetaTransactionWalletClient")
       }
       const signerNonce = await this.contract.read.nonces([metaSigner.address])
       const type = metadata
@@ -184,7 +192,7 @@ export class TrustedHintController {
         )
       }
     } catch (e: any) {
-      throw new Error(`Failed to set hint signed: ${e.message}`)
+      throw new HintSetError(`Failed to set hint signed: ${e.message}`)
     }
   }
 
@@ -202,13 +210,13 @@ export class TrustedHintController {
    */
   async setHints(namespace: Address, list: BytesHex, keys: BytesHex[], values: BytesHex[], metadata?: BytesHex[]) {
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
 
     try {
       const isOwner = await this.isListOwner(namespace, list, this.walletClient.account.address)
       if (!isOwner) {
-        throw new Error(`Provided WalletClient must be the owner of the namespace.`)
+        throw new NotOwnerError("WalletClient")
       }
 
       if (metadata) {
@@ -223,7 +231,7 @@ export class TrustedHintController {
         })
       }
     } catch (e: any) {
-      throw new Error(`Failed to set hints: ${e.message}`)
+      throw new HintSetError(`Failed to set hints: ${e.message}`)
     }
   }
 
@@ -243,20 +251,20 @@ export class TrustedHintController {
    */
   async setHintsSigned(namespace: Address, list: BytesHex, keys: BytesHex[], values: BytesHex[], metadata?: BytesHex[]) {
     if (!this.metaTransactionWalletClient || !this.metaTransactionWalletClient.account) {
-      throw new Error(`metaTransactionWalletClient must be set when creating a TrustedHintController instance`)
+      throw new ClientNotSetError("MetaTransactionWalletClient")
     }
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
     if (this.metaTransactionWalletClient.chain?.id != this.walletClient.chain?.id) {
-      throw new Error(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
+      throw new ClientMisconfiguredError(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
     }
 
     try {
       const metaSigner = this.metaTransactionWalletClient.account
       const signerIsOwner = await this.isListOwner(namespace, list, metaSigner.address)
       if (!signerIsOwner) {
-        throw new Error(`Provided MetaTransactionWalletClient must be the owner of the namespace.`)
+        throw new NotOwnerError("MetaTransactionWalletClient")
       }
 
       const signerNonce = await this.contract.read.nonces([metaSigner.address])
@@ -288,7 +296,7 @@ export class TrustedHintController {
         )
       }
     } catch (e: any) {
-      throw new Error(`Failed to set hints signed: ${e.message}`)
+      throw new HintSetError(`Failed to set hints signed: ${e.message}`)
     }
   }
 
@@ -307,13 +315,13 @@ export class TrustedHintController {
    */
   async setHintDelegated(namespace: Address, list: BytesHex, key: BytesHex, value: BytesHex, metadata?: BytesHex) {
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
 
     try {
       const isDelegate = await this.isListDelegate(namespace, list, this.walletClient.account.address)
       if (!isDelegate) {
-        throw new Error(`Provided WalletClient must be a delegate of the namespace.`)
+        throw new NotDelegateError("WalletClient")
       }
 
       if (metadata) {
@@ -328,7 +336,7 @@ export class TrustedHintController {
         })
       }
     } catch (e: any) {
-      throw new Error(`Failed to set hint delegated: ${e.message}`)
+      throw new HintSetError(`Failed to set hint delegated: ${e.message}`)
     }
   }
 
@@ -348,20 +356,20 @@ export class TrustedHintController {
    */
   async setHintDelegatedSigned(namespace: Address, list: BytesHex, key: BytesHex, value: BytesHex, metadata?: BytesHex) {
     if (!this.metaTransactionWalletClient || !this.metaTransactionWalletClient.account) {
-      throw new Error(`metaTransactionWalletClient must be set when creating a TrustedHintController instance`)
+      throw new ClientNotSetError("MetaTransactionWalletClient")
     }
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
     if (this.metaTransactionWalletClient.chain?.id != this.walletClient.chain?.id) {
-      throw new Error(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
+      throw new ClientMisconfiguredError(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
     }
 
     try {
       const metaSigner = this.metaTransactionWalletClient.account
       const signerIsDelegate = await this.isListDelegate(namespace, list, metaSigner.address)
       if (!signerIsDelegate) {
-        throw new Error(`Provided MetaTransactionWalletClient must be a delegate of the namespace.`)
+        throw new NotDelegateError("MetaTransactionWalletClient")
       }
 
       const signerNonce = await this.contract.read.nonces([metaSigner.address])
@@ -393,7 +401,7 @@ export class TrustedHintController {
         )
       }
     } catch (e: any) {
-      throw new Error(`Failed to set hint delegate signed: ${e.message}`)
+      throw new HintSetError(`Failed to set hint delegate signed: ${e.message}`)
     }
   }
 
@@ -412,13 +420,13 @@ export class TrustedHintController {
    */
   async setHintsDelegated(namespace: Address, list: BytesHex, keys: BytesHex[], values: BytesHex[], metadata?: BytesHex[]) {
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
 
     try {
       const isDelegate = await this.isListDelegate(namespace, list, this.walletClient.account.address)
       if (!isDelegate) {
-        throw new Error(`Provided WalletClient must be a delegate of the namespace.`)
+        throw new NotDelegateError("WalletClient")
       }
 
       if (metadata) {
@@ -433,7 +441,7 @@ export class TrustedHintController {
         })
       }
     } catch (e: any) {
-      throw new Error(`Failed to set hints delegated: ${e.message}`)
+      throw new HintSetError(`Failed to set hints delegated: ${e.message}`)
     }
   }
 
@@ -452,20 +460,20 @@ export class TrustedHintController {
    */
   async setHintsDelegatedSigned(namespace: Address, list: BytesHex, keys: BytesHex[], values: BytesHex[], metadata?: BytesHex[]) {
     if (!this.metaTransactionWalletClient || !this.metaTransactionWalletClient.account) {
-      throw new Error(`metaTransactionWalletClient must be set when creating a TrustedHintController instance`)
+      throw new ClientNotSetError(`MetaTransactionWalletClient`)
     }
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
     if (this.metaTransactionWalletClient.chain?.id != this.walletClient.chain?.id) {
-      throw new Error(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
+      throw new ClientMisconfiguredError(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
     }
 
     try {
       const metaSigner = this.metaTransactionWalletClient.account
       const signerIsDelegate = await this.isListDelegate(namespace, list, metaSigner.address)
       if (!signerIsDelegate) {
-        throw new Error(`Provided MetaTransactionWalletClient must be a delegate of the namespace.`)
+        throw new NotDelegateError("MetaTransactionWalletClient")
       }
 
       const signerNonce = await this.contract.read.nonces([metaSigner.address])
@@ -497,7 +505,7 @@ export class TrustedHintController {
         )
       }
     } catch (e: any) {
-      throw new Error(`Failed to set hints delegate signed: ${e.message}`)
+      throw new HintSetError(`Failed to set hints delegate signed: ${e.message}`)
     }
   }
 
@@ -546,13 +554,13 @@ export class TrustedHintController {
    */
   async addListDelegate(namespace: Address, list: BytesHex, delegate: Address, delegateUntil: number | bigint) {
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
 
     try {
       const isOwner = await this.isListOwner(namespace, list, this.walletClient.account.address)
       if (!isOwner) {
-        throw new Error(`Provided WalletClient must be the owner of the namespace.`)
+        throw new NotOwnerError("WalletClient")
       }
 
       return this.contract.write.addListDelegate([namespace, list, delegate, BigInt(delegateUntil)], {
@@ -560,7 +568,7 @@ export class TrustedHintController {
         account: this.walletClient.account,
       })
     } catch (e: any) {
-      throw new Error(`Failed to add list delegate: ${e.message}`)
+      throw new DelegateManagementError("add", e.message)
     }
   }
 
@@ -578,20 +586,20 @@ export class TrustedHintController {
    */
   async addListDelegateSigned(namespace: Address, list: BytesHex, delegate: Address, delegateUntil: number | bigint) {
     if (!this.metaTransactionWalletClient || !this.metaTransactionWalletClient.account) {
-      throw new Error(`metaTransactionWalletClient must be set when creating a TrustedHintController instance`)
+      throw new ClientNotSetError("MetaTransactionWalletClient")
     }
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
     if (this.metaTransactionWalletClient.chain?.id != this.walletClient.chain?.id) {
-      throw new Error(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
+      throw new ClientMisconfiguredError(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
     }
 
     try {
       const metaSigner = this.metaTransactionWalletClient.account
       const signerIsOwner = await this.isListOwner(namespace, list, metaSigner.address)
       if (!signerIsOwner) {
-        throw new Error(`Provided MetaTransactionWalletClient must be the owner of the namespace.`)
+        throw new NotOwnerError("MetaTransactionWalletClient")
       }
 
       const signerNonce = await this.contract.read.nonces([metaSigner.address])
@@ -612,7 +620,7 @@ export class TrustedHintController {
         { chain: this.walletClient.chain, account: this.walletClient.account }
       )
     } catch (e: any) {
-      throw new Error(`Failed to add list delegate signed: ${e.message}`)
+      throw new DelegateManagementError("add", e.message)
     }
   }
 
@@ -625,13 +633,13 @@ export class TrustedHintController {
    */
   async removeListDelegate(namespace: Address, list: BytesHex, delegate: Address) {
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
 
     try {
       const isOwner = await this.isListOwner(namespace, list, this.walletClient.account.address)
       if (!isOwner) {
-        throw new Error(`Provided WalletClient must be the owner of the namespace.`)
+        throw new NotOwnerError("WalletClient")
       }
 
       return this.contract.write.removeListDelegate([namespace, list, delegate], {
@@ -639,7 +647,7 @@ export class TrustedHintController {
         account: this.walletClient.account,
       })
     } catch (e: any) {
-      throw new Error(`Failed to remove list delegate: ${e.message}`)
+      throw new DelegateManagementError("remove", e.message)
     }
   }
 
@@ -656,20 +664,20 @@ export class TrustedHintController {
    */
   async removeListDelegateSigned(namespace: Address, list: BytesHex, delegate: Address) {
     if (!this.metaTransactionWalletClient || !this.metaTransactionWalletClient.account) {
-      throw new Error(`metaTransactionWalletClient must be set when creating a TrustedHintController instance`)
+      throw new ClientNotSetError("MetaTransactionWalletClient")
     }
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
     if (this.metaTransactionWalletClient.chain?.id != this.walletClient.chain?.id) {
-      throw new Error(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
+      throw new ClientMisconfiguredError(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
     }
 
     try {
       const metaSigner = this.metaTransactionWalletClient.account
       const signerIsOwner = await this.isListOwner(namespace, list, metaSigner.address)
       if (!signerIsOwner) {
-        throw new Error(`Provided MetaTransactionWalletClient must be the owner of the namespace.`)
+        throw new NotOwnerError("MetaTransactionWalletClient")
       }
 
       const signerNonce = await this.contract.read.nonces([metaSigner.address])
@@ -690,7 +698,7 @@ export class TrustedHintController {
         {chain: this.walletClient.chain, account: this.walletClient.account}
       )
     } catch (e: any) {
-      throw new Error(`Failed to remove list delegate signed: ${e.message}`)
+      throw new DelegateManagementError("remove", e.message)
     }
   }
 
@@ -706,13 +714,13 @@ export class TrustedHintController {
    */
   async setListStatus(namespace: Address, list: BytesHex, revoked: boolean) {
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
 
     try {
       const isOwner = await this.isListOwner(namespace, list, this.walletClient.account.address)
       if (!isOwner) {
-        throw new Error(`Provided WalletClient must be the owner of the namespace.`)
+        throw new NotOwnerError("WalletClient")
       }
 
       return this.contract.write.setListStatus([namespace, list, revoked], {
@@ -720,7 +728,7 @@ export class TrustedHintController {
         account: this.walletClient.account,
       })
     } catch (e: any) {
-      throw new Error(`Failed to set list status: ${e.message}`)
+      throw new ListStatusError(e.message)
     }
   }
 
@@ -738,20 +746,20 @@ export class TrustedHintController {
    */
   async setListStatusSigned(namespace: Address, list: BytesHex, revoked: boolean) {
     if (!this.metaTransactionWalletClient || !this.metaTransactionWalletClient.account) {
-      throw new Error(`metaTransactionWalletClient must be set when creating a TrustedHintController instance`)
+      throw new ClientNotSetError("MetaTransactionWalletClient")
     }
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
     if (this.metaTransactionWalletClient.chain?.id != this.walletClient.chain?.id) {
-      throw new Error(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
+      throw new ClientMisconfiguredError(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
     }
 
     try {
       const metaSigner = this.metaTransactionWalletClient.account
       const signerIsOwner = await this.isListOwner(namespace, list, metaSigner.address)
       if (!signerIsOwner) {
-        throw new Error(`Provided MetaTransactionWalletClient must be the owner of the namespace.`)
+        throw new NotOwnerError("MetaTransactionWalletClient")
       }
 
       const signerNonce = await this.contract.read.nonces([metaSigner.address])
@@ -772,7 +780,7 @@ export class TrustedHintController {
         {chain: this.walletClient.chain, account: this.walletClient.account}
       )
     } catch (e: any) {
-      throw new Error(`Failed to set list status signed: ${e.message}`)
+      throw new ListStatusError(e.message)
     }
   }
 
@@ -788,13 +796,13 @@ export class TrustedHintController {
    */
   async setListOwner(namespace: Address, list: BytesHex, newOwner: Address) {
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
 
     try {
       const isOwner = await this.isListOwner(namespace, list, this.walletClient.account.address)
       if (!isOwner) {
-        throw new Error(`Provided WalletClient must be the owner of the namespace.`)
+        throw new NotOwnerError("WalletClient")
       }
 
       return this.contract.write.setListOwner([namespace, list, newOwner], {
@@ -802,7 +810,7 @@ export class TrustedHintController {
         account: this.walletClient.account,
       })
     } catch (e: any) {
-      throw new Error(`Failed to set list owner: ${e.message}`)
+      throw new ListOwnerError(e.message)
     }
   }
 
@@ -819,20 +827,20 @@ export class TrustedHintController {
    */
   async setListOwnerSigned(namespace: Address, list: BytesHex, newOwner: Address) {
     if (!this.metaTransactionWalletClient || !this.metaTransactionWalletClient.account) {
-      throw new Error(`metaTransactionWalletClient must be set when creating a TrustedHintController instance`)
+      throw new ClientNotSetError("MetaTransactionWalletClient")
     }
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
     if (this.metaTransactionWalletClient.chain?.id != this.walletClient.chain?.id) {
-      throw new Error(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
+      throw new ClientMisconfiguredError(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
     }
 
     try {
       const metaSigner = this.metaTransactionWalletClient.account
       const signerIsOwner = await this.isListOwner(namespace, list, metaSigner.address)
       if (!signerIsOwner) {
-        throw new Error(`Provided MetaTransactionWalletClient must be the owner of the namespace.`)
+        throw new NotOwnerError("MetaTransactionWalletClient")
       }
 
       const signerNonce = await this.contract.read.nonces([metaSigner.address])
@@ -853,7 +861,7 @@ export class TrustedHintController {
         {chain: this.walletClient.chain, account: this.walletClient.account}
       )
     } catch (e: any) {
-      throw new Error(`Failed to set list owner signed: ${e.message}`)
+      throw new ListOwnerError(e.message)
     }
   }
 
@@ -890,13 +898,13 @@ export class TrustedHintController {
    */
   async setMetadata(namespace: Address, list: BytesHex, key: BytesHex, value: BytesHex, metadata: BytesHex) {
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
 
     try {
       const isOwner = await this.isListOwner(namespace, list, this.walletClient.account.address)
       if (!isOwner) {
-        throw new Error(`Provided WalletClient must be the owner of the namespace.`)
+        throw new NotOwnerError("WalletClient")
       }
 
       return this.contract.write.setMetadata([namespace, list, key, value, metadata], {
@@ -904,7 +912,7 @@ export class TrustedHintController {
         account: this.walletClient.account,
       })
     } catch (e: any) {
-      throw new Error(`Failed to set metadata: ${e.message}`)
+      throw new MetadataOperationError(e.message)
     }
   }
 
@@ -923,20 +931,20 @@ export class TrustedHintController {
    */
   async setMetadataSigned(namespace: Address, list: BytesHex, key: BytesHex, value: BytesHex, metadata: BytesHex) {
     if (!this.metaTransactionWalletClient || !this.metaTransactionWalletClient.account) {
-      throw new Error(`metaTransactionWalletClient must be set when creating a TrustedHintController instance`)
+      throw new ClientNotSetError("MetaTransactionWalletClient")
     }
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
     if (this.metaTransactionWalletClient.chain?.id != this.walletClient.chain?.id) {
-      throw new Error(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
+      throw new ClientMisconfiguredError(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
     }
 
     try {
       const metaSigner = this.metaTransactionWalletClient.account
       const signerIsOwner = await this.isListOwner(namespace, list, metaSigner.address)
       if (!signerIsOwner) {
-        throw new Error(`Provided MetaTransactionWalletClient must be the owner of the namespace.`)
+        throw new NotOwnerError("MetaTransactionWalletClient")
       }
 
       const signerNonce = await this.contract.read.nonces([metaSigner.address])
@@ -957,7 +965,7 @@ export class TrustedHintController {
         {chain: this.walletClient.chain, account: this.walletClient.account}
       )
     } catch (e: any) {
-      throw new Error(`Failed to set metadata signed: ${e.message}`)
+      throw new MetadataOperationError(e.message)
     }
   }
 
@@ -975,13 +983,13 @@ export class TrustedHintController {
    */
   async setMetadataDelegated(namespace: Address, list: BytesHex, key: BytesHex, value: BytesHex, metadata: BytesHex) {
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
 
     try {
       const isDelegate = await this.isListDelegate(namespace, list, this.walletClient.account.address)
       if (!isDelegate) {
-        throw new Error(`Provided WalletClient must be a delegate of the namespace.`)
+        throw new NotDelegateError("WalletClient")
       }
 
       return this.contract.write.setMetadataDelegated([namespace, list, key, value, metadata], {
@@ -989,7 +997,7 @@ export class TrustedHintController {
         account: this.walletClient.account,
       })
     } catch (e: any) {
-      throw new Error(`Failed to set metadata delegated: ${e.message}`)
+      throw new MetadataOperationError(e.message)
     }
   }
 
@@ -1009,20 +1017,20 @@ export class TrustedHintController {
    */
   async setMetadataDelegatedSigned(namespace: Address, list: BytesHex, key: BytesHex, value: BytesHex, metadata: BytesHex) {
     if (!this.metaTransactionWalletClient || !this.metaTransactionWalletClient.account) {
-      throw new Error(`metaTransactionWalletClient must be set when creating a TrustedHintController instance`)
+      throw new ClientNotSetError("MetaTransactionWalletClient")
     }
     if (!this.walletClient?.chain || !this.walletClient?.account) {
-      throw new Error(`WalletClient must have a chain and account set.`)
+      throw new ClientMisconfiguredError(`WalletClient must have a chain and account set.`)
     }
     if (this.metaTransactionWalletClient.chain?.id != this.walletClient.chain?.id) {
-      throw new Error(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
+      throw new ClientMisconfiguredError(`Provided WalletClient and MetaTransactionWalletClient must be on the same chain.`)
     }
 
     try {
       const metaSigner = this.metaTransactionWalletClient.account
       const signerIsDelegate = await this.isListDelegate(namespace, list, metaSigner.address)
       if (!signerIsDelegate) {
-        throw new Error(`Provided MetaTransactionWalletClient must be a delegate of the namespace.`)
+        throw new NotDelegateError("MetaTransactionWalletClient")
       }
 
       const signerNonce = await this.contract.read.nonces([metaSigner.address])
@@ -1043,7 +1051,7 @@ export class TrustedHintController {
         {chain: this.walletClient.chain, account: this.walletClient.account}
       )
     } catch (e: any) {
-      throw new Error(`Failed to set metadata delegate signed: ${e.message}`)
+      throw new MetadataOperationError(e.message)
     }
   }
 }

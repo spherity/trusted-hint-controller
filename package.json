@@ -1,6 +1,6 @@
 {
   "name": "@spherity/trusted-hint-controller",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A controller library for handling ERC-7506 compliant Trusted Hints",
   "type": "module",
   "main": "./dist/index.cjs",
