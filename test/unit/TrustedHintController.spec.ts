@@ -161,7 +161,7 @@ describe("TrustedHintController", () => {
         walletClient: createWalletClient({} as any),
       });
       await expect(controllerWithoutWallet.setHintSigned("0x0", "0x0", "0x0", "0x0"))
-        .rejects.toThrow("metaTransactionWalletClient must be set when creating a TrustedHintController instance");
+        .rejects.toThrow("MetaTransactionWalletClient must be set and properly configured.");
     })
     it("should throw if no wallet client is set", async () => {
       vi.spyOn(mocks.viem, "createWalletClient").mockImplementationOnce(() => ({
@@ -401,7 +401,7 @@ describe("TrustedHintController", () => {
         walletClient: createWalletClient({} as any),
       });
       await expect(controllerWithoutWallet.setHintDelegatedSigned("0x0", "0x0", "0x0", "0x0"))
-        .rejects.toThrow("metaTransactionWalletClient must be set when creating a TrustedHintController instance");
+        .rejects.toThrow("MetaTransactionWalletClient must be set and properly configured.");
     })
     it("should throw if no wallet client is set", async () => {
       vi.spyOn(mocks.viem, "createWalletClient").mockImplementationOnce(() => ({
@@ -662,7 +662,7 @@ describe("TrustedHintController", () => {
         walletClient: createWalletClient({} as any),
       });
       await expect(controllerWithoutWallet.addListDelegateSigned("0x0", "0x0", "0x0", 0))
-        .rejects.toThrow("metaTransactionWalletClient must be set when creating a TrustedHintController instance");
+        .rejects.toThrow("MetaTransactionWalletClient must be set and properly configured.");
     })
     it("should throw if no wallet client is set", async () => {
       vi.spyOn(mocks.viem, "createWalletClient").mockImplementationOnce(() => ({
@@ -713,7 +713,7 @@ describe("TrustedHintController", () => {
       });
 
       await expect(controllerWithoutWallet.addListDelegateSigned("0x0", "0x0", "0x0", 0))
-        .rejects.toThrow("Failed to add list delegate signed: Provided MetaTransactionWalletClient must be the owner of the namespace.");
+        .rejects.toThrow("Failed to add list delegate: Provided MetaTransactionWalletClient must be the owner of the namespace.");
     })
   })
 
@@ -771,7 +771,7 @@ describe("TrustedHintController", () => {
         walletClient: createWalletClient({} as any),
       });
       await expect(controllerWithoutWallet.removeListDelegateSigned("0x0", "0x0", "0x0"))
-        .rejects.toThrow("metaTransactionWalletClient must be set when creating a TrustedHintController instance");
+        .rejects.toThrow("MetaTransactionWalletClient must be set and properly configured.");
     })
     it("should throw if no wallet client is set", async () => {
       vi.spyOn(mocks.viem, "createWalletClient").mockImplementationOnce(() => ({
@@ -822,7 +822,7 @@ describe("TrustedHintController", () => {
       });
 
       await expect(controllerWithoutWallet.removeListDelegateSigned("0x0", "0x0", "0x0"))
-        .rejects.toThrow("Failed to remove list delegate signed: Provided MetaTransactionWalletClient must be the owner of the namespace.");
+        .rejects.toThrow("Failed to remove list delegate: Provided MetaTransactionWalletClient must be the owner of the namespace.");
     })
   })
 
@@ -880,7 +880,7 @@ describe("TrustedHintController", () => {
         walletClient: createWalletClient({} as any),
       });
       await expect(controllerWithoutWallet.setListStatusSigned("0x0", "0x0", true))
-        .rejects.toThrow("metaTransactionWalletClient must be set when creating a TrustedHintController instance");
+        .rejects.toThrow("MetaTransactionWalletClient must be set and properly configured.");
     })
     it("should throw if no wallet client is set", async () => {
       vi.spyOn(mocks.viem, "createWalletClient").mockImplementationOnce(() => ({
@@ -965,7 +965,7 @@ describe("TrustedHintController", () => {
         walletClient: createWalletClient({} as any),
       });
       await expect(controllerWithoutWallet.setListOwnerSigned("0x0", "0x0", "0x0"))
-        .rejects.toThrow("metaTransactionWalletClient must be set when creating a TrustedHintController instance");
+        .rejects.toThrow("MetaTransactionWalletClient must be set and properly configured.");
     })
     it("should throw if no wallet client is set", async () => {
       vi.spyOn(mocks.viem, "createWalletClient").mockImplementationOnce(() => ({
@@ -1016,7 +1016,7 @@ describe("TrustedHintController", () => {
       });
 
       await expect(controllerWithoutWallet.setListOwnerSigned("0x0", "0x0", "0x0"))
-        .rejects.toThrow("Failed to set list owner signed: Provided MetaTransactionWalletClient must be the owner of the namespace.");
+        .rejects.toThrow("Failed to set list owner: Provided MetaTransactionWalletClient must be the owner of the namespace.");
     })
   })
 
@@ -1084,7 +1084,7 @@ describe("TrustedHintController", () => {
         walletClient: createWalletClient({} as any),
       });
       await expect(controllerWithoutWallet.setMetadataSigned("0x0", "0x0", "0x0", "0x0", "0x0"))
-        .rejects.toThrow("metaTransactionWalletClient must be set when creating a TrustedHintController instance");
+        .rejects.toThrow("MetaTransactionWalletClient must be set and properly configured.");
     })
     it("should throw if no wallet client is set", async () => {
       vi.spyOn(mocks.viem, "createWalletClient").mockImplementationOnce(() => ({
@@ -1135,7 +1135,7 @@ describe("TrustedHintController", () => {
       });
 
       await expect(controllerWithoutWallet.setMetadataSigned("0x0", "0x0", "0x0", "0x0", "0x0"))
-        .rejects.toThrow("Failed to set metadata signed: Provided MetaTransactionWalletClient must be the owner of the namespace.");
+        .rejects.toThrow("Failed to set metadata: Provided MetaTransactionWalletClient must be the owner of the namespace.");
     })
   })
 
@@ -1163,7 +1163,7 @@ describe("TrustedHintController", () => {
     it("should throw if caller is not a delegate of the namespace", async () => {
       vi.spyOn(controller.contract.read, "identityIsDelegate").mockImplementationOnce(async () => false);
       await expect(controller.setMetadataDelegated("0x0", "0x0", "0x0", "0x0", "0x0"))
-        .rejects.toThrow("Failed to set metadata delegated: Provided WalletClient must be a delegate of the namespace.");
+        .rejects.toThrow("Failed to set metadata: Provided WalletClient must be a delegate of the namespace.");
     })
   })
 
@@ -1193,7 +1193,7 @@ describe("TrustedHintController", () => {
         walletClient: createWalletClient({} as any),
       });
       await expect(controllerWithoutWallet.setMetadataDelegatedSigned("0x0", "0x0", "0x0", "0x0", "0x0"))
-        .rejects.toThrow("metaTransactionWalletClient must be set when creating a TrustedHintController instance");
+        .rejects.toThrow("MetaTransactionWalletClient must be set and properly configured.");
     })
     it("should throw if no wallet client is set", async () => {
       vi.spyOn(mocks.viem, "createWalletClient").mockImplementationOnce(() => ({
